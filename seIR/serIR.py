@@ -54,6 +54,7 @@ current_position = [0,0]
 current_char = KEYBOARD_TV[0][0]
 password = [] 
 
+
 def move_cursor(position, direction_code):
     global KEYBOARD_TV
 
@@ -104,6 +105,7 @@ def move_cursor(position, direction_code):
 
 def main():
     global current_position, current_char, password
+    flag_caps = False
     
     print(f"Iniciando serIR (Python)... Conectando em {PORTA_SERIAL}")
     try:
@@ -144,7 +146,19 @@ def main():
                     print("="*30 + "\n")
                     break # Encerra o programa
 
+                elif current_char == KEY_DOTCOM:
+                    password.append(".com")
+                    print(">>'.com' inserido")
 
+                elif current_char == KEY_CAPSLOCK:
+                    if flag_caps == False:
+                        flag_caps = True
+                        # Volta para a posição inicial
+                        current_position[0, 0]
+                        current_char = KEYBOARD_TV[0][0]
+                        continue
+                    else:
+                        flag_caps = False
 
                 # --- Logica para troca de matriz para os teclados ---
 
@@ -153,6 +167,9 @@ def main():
                         KEYBOARD_TV = SPECIAL_KEYBOARD1_TV
                     else:
                         KEYBOARD_TV = MAIN_KEYBOARD_TV
+                    # Volta para a posição inicial
+                    current_position[0, 0]
+                    current_char = KEYBOARD_TV[0][0]
 
                 # --- Logica para troca entre os teclados especiais ---
                 elif current_char == KEY_KEYBOARD_SPECIAL:
@@ -160,12 +177,22 @@ def main():
                         KEYBOARD_TV = SPECIAL_KEYBOARD2_TV
                     else:
                         KEYBOARD_TV = SPECIAL_KEYBOARD1_TV
+                    # Volta para a posição inicial
+                    current_position[0, 0]
+                    current_char = KEYBOARD_TV[0][0]
 
 
                 # É um caractere comum
                 else:
+                    if flag_caps:
+                        current_char = current_char.upper()
                     password.append(current_char)
                     print(f">> Letra '{current_char}' adicionada.")
+                    if flag_caps:
+                        current_char = current_char.lower()
+
+                if flag_caps:
+                    flag_caps = False
 
                 # Mostra o estado atual da senha
                 print(f"Buffer Atual: [{''.join(password)}]")
