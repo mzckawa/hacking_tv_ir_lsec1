@@ -97,9 +97,22 @@ def move_cursor(position, direction_code):
         row += 1
         
     elif direction_code == CODIGO_ESQUERDA:
-        col -= 1
+
+        if col in (3, 4, 5, 6, 7) and KEYBOARD_TV[2][4] == "\"":
+            col = 2
+
+        elif col in (2, 3, 4, 5, 6, 7, 8) and KEYBOARD_TV[2][4] == "v":
+            col = 1
+
+        else:
+            col -= 1
     elif direction_code == CODIGO_DIREITA:
-        col += 1
+
+        if (col in (3, 4, 5, 6, 7) and KEYBOARD_TV[2][4] == "\"") or (col in (2, 3, 4, 5, 6, 7, 8) and KEYBOARD_TV[2][4] == "v"):
+            col = 8
+
+        else:
+            col += 1
 
     # --- Tratamento de Limites de Colunas (ESQUERDA/DIREITA) ---
     # Importante: O tamanho da coluna depende da linha atual!
