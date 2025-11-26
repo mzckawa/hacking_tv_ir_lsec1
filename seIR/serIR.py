@@ -1,121 +1,157 @@
 import serial
 import time
 
-## --- CONFIGURAÇÃO (VOCÊ PRECISA MUDAR ISSO) ---
-# Cole aqui os códigos (sem o '0x') que você 
-# descobriu com o script 'mapeador_botoes.py'.
-# Os valores abaixo são SÓ EXEMPLOS.
-# ----------------------------------------------------
-CODIGO_CIMA = "40"      # Mude para o seu código de "Cima"
-CODIGO_BAIXO = "41"   # Mude para o seu código de "Baixo"
-CODIGO_ESQUERDA = "07" # Mude para o seu código de "Esquerda"
-CODIGO_DIREITA = "06"  # Mude para o seu código de "Direita"
-CODIGO_ENTER = "44"     # Mude para o seu código de "Enter/OK"
-CODIGO_SAIR = "5B"      # Mude para o seu código de "Sair/Power"
-# ----------------------------------------------------
+# --- Seus Códigos IR (Exemplos) ---
+CODIGO_CIMA = "58"
+CODIGO_BAIXO = "59"
+CODIGO_ESQUERDA = "5A"
+CODIGO_DIREITA = "5B"
+CODIGO_ENTER = "5C" # Botão de ação (selecionar letra)
+CODIGO_SAIR = "A"   # Botão de emergência/sair forçado
 
 # --- Configuração da Porta ---
-PORTA_SERIAL = 'COM3'  # Porta fixada conforme sua solicitação
-BAUD_RATE = 9600     # O mesmo do Serial.begin(9600) no Arduino
-# -----------------------------
+# Nota: No Linux (Ubuntu/Debian), geralmente é '/dev/ttyUSB0' ou '/dev/ttyACM0'
+PORTA_SERIAL = 'COM4' 
+BAUD_RATE = 9600
 
-# O teclado virtual, traduzido do Go
-KEYBOARD_TV = [
-    ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"],
+# --- Teclas Especiais (Constantes para facilitar a lógica) ---
+KEY_SPACE = "[ESP]"
+KEY_BACKSPACE = "[DEL]"
+KEY_ENTER = "[ENTER]"
+KEY_CAPSLOCK = "[CAPS]"
+KEY_KEYBOARD_SWITCH = "[SWITCH]"
+KEY_KEYBOARD_SPECIAL = "[SWITCH_SPECIAL]"
+KEY_DOTCOM = "[DOTCOM]"
+
+# --- Layout do Teclado Virtual ---
+# Adicionei uma nova linha com as teclas especiais
+KEYBOARD1_TV = [
     ["q", "w", "e", "r", "t", "y", "u", "i", "o", "p"],
-    ["a", "s", "d", "f", "g", "h", "j", "k", "l", "?"],
-    ["@", "z", "x", "c", "v", "b", "n", "m", ",", "."]
+    ["a", "s", "d", "f", "g", "h", "j", "k", "l", KEY_ENTER],
+    ["z", "x", "c", "v", "b", "n", "m", "!", "?"],
+    [KEY_KEYBOARD_SWITCH, "/", KEY_SPACE, KEY_SPACE, KEY_SPACE, KEY_SPACE, KEY_SPACE, KEY_SPACE, KEY_SPACE, ".", KEY_DOTCOM] # Linha de Comandos
 ]
 
-# Posição inicial (linha 2, coluna 4), que é a letra 'g'
-current_position = [2, 4] 
-current_char = "g"
-password = [] # Lista para armazenar os caracteres "digitados"
+SPECIAL_KEYBOARD1_TV = [
+    ["1", "2", "3", "4", "5", "6", "7", "8", "8", "9"],
+    ["@", "#", "$", "%", "&", "-", "+", "(", ")", KEY_ENTER],
+    [KEY_KEYBOARD_SPECIAL, "\\", "=", "*", "'", ":", ";", "!", "?", KEY_KEYBOARD_SPECIAL],
+    [KEY_KEYBOARD_SWITCH, ",", "_", KEY_SPACE, KEY_SPACE, KEY_SPACE, KEY_SPACE, KEY_SPACE, "/", ".", KEY_DOTCOM]
+]
+# Posição inicial
+x = 0, y = 0 # Começa na linha 1 (letra 'q')
+current_char = KEYBOARD_TV[0][0]
+password = [] 
 
 def move_cursor(position, direction_code):
-    """
-    Calcula a nova posição do cursor no teclado virtual.
-    """
     global KEYBOARD_TV
     
-    row, col = position[0], position[1]
+    row, col = x, y
+    max_rows = len(KEYBOARD_TV)
     
-    if direction_code == CODIGO_ESQUERDA:
-        col -= 1
-    elif direction_code == CODIGO_DIREITA:
-        col += 1
-    elif direction_code == CODIGO_CIMA:
+    # --- Movimentação Básica ---
+    if direction_code == CODIGO_CIMA:
         row -= 1
     elif direction_code == CODIGO_BAIXO:
         row += 1
-        
-    # --- Verificação de Limites (Impede que o cursor "caia" da matriz) ---
-    max_rows = len(KEYBOARD_TV)
-    max_cols = len(KEYBOARD_TV[0])
+    elif direction_code == CODIGO_ESQUERDA:
+        col -= 1
+    elif direction_code == CODIGO_DIREITA:
+        col += 1
 
-    if row < 0: row = max_rows - 1 # Permite "dar a volta" por cima
-    if row >= max_rows: row = 0      # Permite "dar a volta" por baixo
-    
-    if col < 0: col = max_cols - 1 # Permite "dar a volta" pela esquerda
-    if col >= max_cols: col = 0      # Permite "dar a volta" pela direita
-    # -----------------------------------------------------------------
+    # --- Tratamento de Limites de Colunas (ESQUERDA/DIREITA) ---
+    # Importante: O tamanho da coluna depende da linha atual!
+    current_row_length = len(KEYBOARD_TV[row])
+    if col < 0:
+        row -= 1
+        current_row_length = len(KEYBOARD_TV[row])
+        col = current_row_length - 1 # Vai para o fim da linha
+
+    elif col >= current_row_length:
+        col = 0 # Vai para o início da linha
+        row +=1 
+
+    # --- Tratamento de Limites de Linhas (CIMA/BAIXO) ---
+    if row < 0: 
+        row = 0
+    elif row >= max_rows: 
+        row = max_rows - 1
+        
+    # --- Correção de Coluna ao mudar de linha ---
+    # Se você estava na coluna 9 da linha de letras e desceu 
+    # para a linha de comandos (que só tem 3 itens), 
+    # precisamos "puxar" o cursor para o último item válido.
+    if col >= len(KEYBOARD_TV[row]):
+        col = len(KEYBOARD_TV[row]) - 1
 
     new_position = [row, col]
     new_char = KEYBOARD_TV[row][col]
     
     return new_position, new_char
 
-# --- Função Principal (Tradução da 'main' do Go) ---
 def main():
     global current_position, current_char, password
     
     print(f"Iniciando serIR (Python)... Conectando em {PORTA_SERIAL}")
     try:
         ser = serial.Serial(PORTA_SERIAL, BAUD_RATE, timeout=1)
-        print("Conectado! Use os botões direcionais do controle.")
+        print("Conectado! Aguardando comandos...")
         print(f"Posição Inicial: {current_position} -> '{current_char}'")
 
         while True:
             linha_bytes = ser.readline()
             if not linha_bytes:
-                continue # Pula se não recebeu nada (timeout)
+                continue 
                 
-            received_code = linha_bytes.decode('utf-8').strip().upper() # .upper() para garantir
+            received_code = linha_bytes.decode('utf-8').strip().upper()
             
-            # É um botão direcional?
+            # --- 1. Navegação ---
             if received_code in [CODIGO_CIMA, CODIGO_BAIXO, CODIGO_ESQUERDA, CODIGO_DIREITA]:
                 current_position, current_char = move_cursor(current_position, received_code)
-                print(f"Posição: {current_position}  Tecla: '{current_char}'")
+                print(f"Posição: {current_position} | Seleção: '{current_char}'")
             
-            # É o botão de ENTER?
+            # --- 2. Seleção (Botão de Ação do Controle) ---
             elif received_code == CODIGO_ENTER:
-                password.append(current_char)
-                print(f"--- ENTER! --- Letra '{current_char}' adicionada.")
-                print(f"Senha atual: {''.join(password)}")
-            
-            # É o botão de SAIR?
-            elif received_code == CODIGO_SAIR:
-                print("\n--- SAINDO ---")
-                print(f"A senha final capturada foi: {''.join(password)}")
-                break # Sai do loop while
                 
-            # Ignora qualquer outro botão
-            else:
-                pass # Não faz nada com códigos desconhecidos
+                # Verifica se é uma tecla especial
+                if current_char == KEY_SPACE:
+                    password.append(" ")
+                    print(">> Espaço inserido.")
+                
+                elif current_char == KEY_BACKSPACE:
+                    if len(password) > 0:
+                        removed = password.pop()
+                        print(f">> Caractere '{removed}' apagado.")
+                    else:
+                        print(">> Nada para apagar.")
+                
+                elif current_char == KEY_SUBMIT:
+                    print("\n" + "="*30)
+                    print(f"SENHA FINALIZADA: {''.join(password)}")
+                    print("="*30 + "\n")
+                    break # Encerra o programa
+                
+                else:
+                    # É um caractere comum
+                    password.append(current_char)
+                    print(f">> Letra '{current_char}' adicionada.")
 
-    except serial.SerialException as e:
-        print(f"\n--- ERRO ---")
-        print(f"Não foi possível abrir a porta {PORTA_SERIAL}.")
-        print("Verifique se a IDE do Arduino (Monitor Serial) está fechada.")
+                # Mostra o estado atual da senha
+                print(f"Buffer Atual: [{''.join(password)}]")
+            
+            # --- 3. Botão Sair (Abortar) ---
+            elif received_code == CODIGO_SAIR:
+                print("\n--- Cancelado pelo usuário ---")
+                break 
+
+    except serial.SerialException:
+        print(f"\nErro: Não foi possível abrir a porta {PORTA_SERIAL}.")
     except KeyboardInterrupt:
-        print("\nPrograma interrompido.")
-        if password:
-            print(f"A senha capturada foi: {''.join(password)}")
+        print("\nPrograma interrompido via teclado.")
     finally:
         if 'ser' in locals() and ser.is_open:
             ser.close()
-            print("Porta serial fechada.")
+            print("Conexão encerrada.")
 
-# Inicia o programa
 if __name__ == "__main__":
     main()
