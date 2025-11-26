@@ -25,17 +25,17 @@ KEY_DOTCOM = "[.COM]"
 # --- Layout do Teclado Virtual ---
 # Adicionei uma nova linha com as teclas especiais
 MAIN_KEYBOARD_TV = [
-    ["q", "w", "e", "r", "t", "y", "u", "i", "o", "p"],
+    ["q", "w", "e", "r", "t", "y", "u", "i", "o", "p", KEY_BACKSPACE],
     ["a", "s", "d", "f", "g", "h", "j", "k", "l", KEY_ENTER],
-    ["z", "x", "c", "v", "b", "n", "m", "!", "?"],
+    [KEY_CAPSLOCK, "z", "x", "c", "v", "b", "n", "m", "!", "?", KEY_CAPSLOCK],
     [KEY_KEYBOARD_SWITCH, "/", KEY_SPACE, KEY_SPACE, KEY_SPACE, KEY_SPACE, KEY_SPACE, KEY_SPACE, KEY_SPACE, ".", KEY_DOTCOM] # Linha de Comandos
 ]
 
 # --- Teclado com chars especias e numericos ---
 SPECIAL_KEYBOARD1_TV = [
-    ["1", "2", "3", "4", "5", "6", "7", "8", "8", "9"],
+    ["1", "2", "3", "4", "5", "6", "7", "8", "8", "9", "0", KEY_BACKSPACE],
     ["@", "#", "$", "%", "&", "-", "+", "(", ")", KEY_ENTER],
-    [KEY_KEYBOARD_SPECIAL, "\\", "=", "*", "'", ":", ";", "!", "?", KEY_KEYBOARD_SPECIAL],
+    [KEY_KEYBOARD_SPECIAL, "\\", "=", "*", "\"", "'", ":", ";", "!", "?", KEY_KEYBOARD_SPECIAL],
     [KEY_KEYBOARD_SWITCH, ",", "_", KEY_SPACE, KEY_SPACE, KEY_SPACE, KEY_SPACE, KEY_SPACE, "/", ".", KEY_DOTCOM]
 ]
 
@@ -69,8 +69,16 @@ def move_cursor(position, direction_code):
             col += 1 
 
         # tratamento da movimentação para cima a partir da tecla de espaço
-        elif row == 3 and col in (3, 4, 5, 6, 7):
-            col = 3 
+        elif row == 3:
+            
+            # no teclado numérico, o espaço, que tem o tamanho de 5 teclas normais, vai para a tecla da aspa dupla
+            # identificando qual caractere está na posição [2][4], identificamos qual teclado está sendo utilizado no momento 
+            if col in (3, 4, 5, 6, 7) and KEYBOARD_TV[2][4] == "\"": 
+                col = 4
+
+            # no teclado numérico, o espaço, que tem o tamanho de 7 teclas normais, vai para a tecla da letra v 
+            elif col in (2, 3, 4, 5, 6, 7, 8) and KEYBOARD_TV[2][4] == "v":
+                col = 4 
 
         # em todas as situações, a linha diminui em 1, então deixamos o comando abaixo fora das condicionais anteriores
         row -= 1
