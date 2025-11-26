@@ -56,7 +56,8 @@ password = []
 
 
 def move_cursor(position, direction_code):
-    global KEYBOARD_TV
+    global KEYBOARD_TV, MAIN_KEYBOARD_TV, SPECIAL_KEYBOARD1_TV, SPECIAL_KEYBOARD2_TV
+    global KEY_SPACE
 
     row, col = position[0], position[1]
     max_rows = len(KEYBOARD_TV)
@@ -69,16 +70,11 @@ def move_cursor(position, direction_code):
             col += 1 
 
         # tratamento da movimentação para cima a partir da tecla de espaço
-        elif row == 3:
-            
-            # no teclado numérico, o espaço, que tem o tamanho de 5 teclas normais, vai para a tecla da aspa dupla
-            # identificando qual caractere está na posição [2][4], identificamos qual teclado está sendo utilizado no momento 
-            if col in (3, 4, 5, 6, 7) and KEYBOARD_TV[2][4] == "\"": 
+        elif KEYBOARD_TV[row][col] == KEY_SPACE:
+            if KEYBOARD_TV == MAIN_KEYBOARD_TV:
                 col = 4
-
-            # no teclado numérico, o espaço, que tem o tamanho de 7 teclas normais, vai para a tecla da letra v 
-            elif col in (2, 3, 4, 5, 6, 7, 8) and KEYBOARD_TV[2][4] == "v":
-                col = 4 
+            else:
+                col = 4
 
         # em todas as situações, a linha diminui em 1, então deixamos o comando abaixo fora das condicionais anteriores
         row -= 1
@@ -98,21 +94,22 @@ def move_cursor(position, direction_code):
         
     elif direction_code == CODIGO_ESQUERDA:
 
-        if col in (3, 4, 5, 6, 7) and KEYBOARD_TV[2][4] == "\"":
-            col = 2
-
-        elif col in (2, 3, 4, 5, 6, 7, 8) and KEYBOARD_TV[2][4] == "v":
-            col = 1
+        
+        if KEYBOARD_TV[row][col] == KEY_SPACE:
+            while KEYBOARD_TV[row][col] == KEY_SPACE:
+                col -= 1
 
         else:
             col -= 1
     elif direction_code == CODIGO_DIREITA:
 
-        if (col in (3, 4, 5, 6, 7) and KEYBOARD_TV[2][4] == "\"") or (col in (2, 3, 4, 5, 6, 7, 8) and KEYBOARD_TV[2][4] == "v"):
-            col = 8
+        if KEYBOARD_TV[row][col] == KEY_SPACE:
+            while KEYBOARD_TV[row][col] == KEY_SPACE:
+                col += 1
 
         else:
             col += 1
+        
 
     # --- Tratamento de Limites de Colunas (ESQUERDA/DIREITA) ---
     # Importante: O tamanho da coluna depende da linha atual!
@@ -256,3 +253,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    
