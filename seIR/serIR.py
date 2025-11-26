@@ -6,7 +6,7 @@ CODIGO_CIMA = "58"
 CODIGO_BAIXO = "59"
 CODIGO_ESQUERDA = "5A"
 CODIGO_DIREITA = "5B"
-CODIGO_ENTER = "5C" # Botão confirmar
+CODIGO_CONFIRM = "5C" # Botão confirmar
 CODIGO_SAIR = "A"   # Botão de voltar
 
 # --- Configuração da Porta ---
@@ -24,7 +24,7 @@ KEY_DOTCOM = "[.COM]"
 
 # --- Layout do Teclado Virtual ---
 # Adicionei uma nova linha com as teclas especiais
-KEYBOARD1_TV = [
+MAIN_KEYBOARD_TV = [
     ["q", "w", "e", "r", "t", "y", "u", "i", "o", "p"],
     ["a", "s", "d", "f", "g", "h", "j", "k", "l", KEY_ENTER],
     ["z", "x", "c", "v", "b", "n", "m", "!", "?"],
@@ -49,6 +49,7 @@ SPECIAL_KEYBOARD2_TV = [
 ]
 
 # Posição inicial
+KEYBOARD_TV = MAIN_KEYBOARD_TV
 current_position = [0,0]
 current_char = KEYBOARD_TV[0][0]
 password = [] 
@@ -91,7 +92,7 @@ def move_cursor(position, direction_code):
         
     # --- Correção de Coluna ao mudar de linha ---
     # Se você estava na coluna N da linha de letras e desceu 
-    # para a linha de comandos que tenha n itens onde n < N
+    # para uma linha que tenha n itens onde n < N
     # precisamos "puxar" o cursor para o último item válido.
     if col >= len(KEYBOARD_TV[row]):
         col = len(KEYBOARD_TV[row]) - 1
@@ -123,7 +124,7 @@ def main():
                 print(f"Posição: {current_position} | Seleção: '{current_char}'")
             
             # --- 2. Seleção (Botão de Ação do Controle) ---
-            elif received_code == CODIGO_ENTER:
+            elif received_code == CODIGO_CONFIRM:
                 
                 # Verifica se é uma tecla especial
                 if current_char == KEY_SPACE:
@@ -137,14 +138,32 @@ def main():
                     else:
                         print(">> Nada para apagar.")
                 
-                elif current_char == KEY_SUBMIT:
+                elif current_char == KEY_ENTER:
                     print("\n" + "="*30)
                     print(f"SENHA FINALIZADA: {''.join(password)}")
                     print("="*30 + "\n")
                     break # Encerra o programa
-                
+
+
+
+                # --- Logica para troca de matriz para os teclados ---
+
+                elif current_char == KEY_KEYBOARD_SWITCH:
+                    if KEYBOARD_TV == MAIN_KEYBOARD_TV:
+                        KEYBOARD_TV = SPECIAL_KEYBOARD1_TV
+                    else:
+                        KEYBOARD_TV = MAIN_KEYBOARD_TV
+
+                # --- Logica para troca entre os teclados especiais ---
+                elif current_char == KEY_KEYBOARD_SPECIAL:
+                    if KEYBOARD_TV == SPECIAL_KEYBOARD1_TV:
+                        KEYBOARD_TV = SPECIAL_KEYBOARD2_TV
+                    else:
+                        KEYBOARD_TV = SPECIAL_KEYBOARD1_TV
+
+
+                # É um caractere comum
                 else:
-                    # É um caractere comum
                     password.append(current_char)
                     print(f">> Letra '{current_char}' adicionada.")
 
