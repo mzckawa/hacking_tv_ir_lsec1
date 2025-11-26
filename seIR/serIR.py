@@ -6,11 +6,10 @@ CODIGO_CIMA = "58"
 CODIGO_BAIXO = "59"
 CODIGO_ESQUERDA = "5A"
 CODIGO_DIREITA = "5B"
-CODIGO_ENTER = "5C" # Botão de ação (selecionar letra)
-CODIGO_SAIR = "A"   # Botão de emergência/sair forçado
+CODIGO_ENTER = "5C" # Botão confirmar
+CODIGO_SAIR = "A"   # Botão de voltar
 
 # --- Configuração da Porta ---
-# Nota: No Linux (Ubuntu/Debian), geralmente é '/dev/ttyUSB0' ou '/dev/ttyACM0'
 PORTA_SERIAL = 'COM4' 
 BAUD_RATE = 9600
 
@@ -21,7 +20,7 @@ KEY_ENTER = "[ENTER]"
 KEY_CAPSLOCK = "[CAPS]"
 KEY_KEYBOARD_SWITCH = "[SWITCH]"
 KEY_KEYBOARD_SPECIAL = "[SWITCH_SPECIAL]"
-KEY_DOTCOM = "[DOTCOM]"
+KEY_DOTCOM = "[.COM]"
 
 # --- Layout do Teclado Virtual ---
 # Adicionei uma nova linha com as teclas especiais
@@ -32,24 +31,35 @@ KEYBOARD1_TV = [
     [KEY_KEYBOARD_SWITCH, "/", KEY_SPACE, KEY_SPACE, KEY_SPACE, KEY_SPACE, KEY_SPACE, KEY_SPACE, KEY_SPACE, ".", KEY_DOTCOM] # Linha de Comandos
 ]
 
+# --- Teclado com chars especias e numericos ---
 SPECIAL_KEYBOARD1_TV = [
     ["1", "2", "3", "4", "5", "6", "7", "8", "8", "9"],
     ["@", "#", "$", "%", "&", "-", "+", "(", ")", KEY_ENTER],
     [KEY_KEYBOARD_SPECIAL, "\\", "=", "*", "'", ":", ";", "!", "?", KEY_KEYBOARD_SPECIAL],
     [KEY_KEYBOARD_SWITCH, ",", "_", KEY_SPACE, KEY_SPACE, KEY_SPACE, KEY_SPACE, KEY_SPACE, "/", ".", KEY_DOTCOM]
 ]
+
+# Tem outro teclado especial porém com teclas que não são muito comuns, a configuração dele é indentica ao "SPECIAL_KEYBOARD1_TV" apenas trocando os chars
+# Por isso decidimos por apenas replicar o outro teclado para podermos manter o tracking da posição e para casos decidirmos colocar o outro teclado no futuro
+SPECIAL_KEYBOARD2_TV = [
+    ["1", "2", "3", "4", "5", "6", "7", "8", "8", "9"],
+    ["@", "#", "$", "%", "&", "-", "+", "(", ")", KEY_ENTER],
+    [KEY_KEYBOARD_SPECIAL, "\\", "=", "*", "'", ":", ";", "!", "?", KEY_KEYBOARD_SPECIAL],
+    [KEY_KEYBOARD_SWITCH, ",", "_", KEY_SPACE, KEY_SPACE, KEY_SPACE, KEY_SPACE, KEY_SPACE, "/", ".", KEY_DOTCOM]
+]
+
 # Posição inicial
-x = 0, y = 0 # Começa na linha 1 (letra 'q')
+current_position = [0,0]
 current_char = KEYBOARD_TV[0][0]
 password = [] 
 
 def move_cursor(position, direction_code):
     global KEYBOARD_TV
-    
-    row, col = x, y
+
+    row, col = position[0], position[1]
     max_rows = len(KEYBOARD_TV)
     
-    # --- Movimentação Básica ---
+    # Movimentação Básica ---
     if direction_code == CODIGO_CIMA:
         row -= 1
     elif direction_code == CODIGO_BAIXO:
@@ -61,12 +71,14 @@ def move_cursor(position, direction_code):
 
     # --- Tratamento de Limites de Colunas (ESQUERDA/DIREITA) ---
     # Importante: O tamanho da coluna depende da linha atual!
+    # O teclado da TVBOX utilizada para demonstração tem um comportamento onde caso passemos o limite de colunas o cursor vai para uma outra linha
+    # Se o limite for quebrado para a direita, o cursor vai para linha de baixo na primeira coluna
+    # Caso o limte for quebrado para a esquerda, o cursor vai para a linha acima na ultima coluna
     current_row_length = len(KEYBOARD_TV[row])
     if col < 0:
         row -= 1
         current_row_length = len(KEYBOARD_TV[row])
         col = current_row_length - 1 # Vai para o fim da linha
-
     elif col >= current_row_length:
         col = 0 # Vai para o início da linha
         row +=1 
@@ -78,8 +90,8 @@ def move_cursor(position, direction_code):
         row = max_rows - 1
         
     # --- Correção de Coluna ao mudar de linha ---
-    # Se você estava na coluna 9 da linha de letras e desceu 
-    # para a linha de comandos (que só tem 3 itens), 
+    # Se você estava na coluna N da linha de letras e desceu 
+    # para a linha de comandos que tenha n itens onde n < N
     # precisamos "puxar" o cursor para o último item válido.
     if col >= len(KEYBOARD_TV[row]):
         col = len(KEYBOARD_TV[row]) - 1
