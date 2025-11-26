@@ -63,9 +63,31 @@ def move_cursor(position, direction_code):
     
     # Movimentação Básica ---
     if direction_code == CODIGO_CIMA:
+        
+        # saindo da linha 1 e indo para cima, os elementos da coluna i vão para as colunas i+1
+        if row == 1:
+            col += 1 
+
+        # tratamento da movimentação para cima a partir da tecla de espaço
+        elif row == 3 and col in (3, 4, 5, 6, 7):
+            col = 3 
+
+        # em todas as situações, a linha diminui em 1, então deixamos o comando abaixo fora das condicionais anteriores
         row -= 1
+
     elif direction_code == CODIGO_BAIXO:
+
+        # tratamento da movimentação para baixo partindo da linha zero 
+        if row == 0:
+            if col == 0:
+                row += 1 # aumenta uma linha, indo para a coluna zero dela (ou seja, col se mantém)
+                
+            else: 
+                col -= 1 # aumenta uma linha, mas, partindo da coluna i, vai para a coluna i-1 da linha de baixo
+
+        # em todas as situações, a linha aumenta em 1, então deixamos o comando abaixo fora das condicionais anteriores
         row += 1
+        
     elif direction_code == CODIGO_ESQUERDA:
         col -= 1
     elif direction_code == CODIGO_DIREITA:
