@@ -16,11 +16,26 @@ void setup() {
 void loop() {
   if (IrReceiver.decode()) {
     
-    // Envia APENAS o código do comando, em formato HEXADECIMAL.
-    // O "println" envia o número e uma quebra de linha (\n),
-    // o que é perfeito para o Python ler com "readline()".
-    Serial.println(IrReceiver.decodedIRData.command, HEX);
+    // --- SOLUÇÃO DE REPETIÇÃO ---
     
+    // 1. Verificamos se esse sinal é apenas uma "repetição" automática do protocolo.
+    // A biblioteca IRremote já sabe identificar isso. Se for repetição, ignoramos.
+    if (!(IrReceiver.decodedIRData.flags & IRDATA_FLAGS_IS_REPEAT)) {
+        
+        // 2. Verificação extra: Se o comando for "0", geralmente é ruído ou erro de leitura.
+        if (IrReceiver.decodedIRData.command != 0) {
+            
+            Serial.println(IrReceiver.decodedIRData.command, HEX);
+            
+            // 3. O Delay Mágico:
+            // Pausa o Arduino por 250 milissegundos (0.25 segundos).
+            // Isso impede que um "clique rápido" seja lido como dois cliques.
+            // Se sentir que o controle ficou "lento", diminua para 150 ou 200.
+            delay(150); 
+        }
+    }
+    
+    // Prepara para receber o próximo sinal
     IrReceiver.resume();
   }
 }

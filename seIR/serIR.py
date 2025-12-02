@@ -2,15 +2,16 @@ import serial
 import time
 
 # --- Seus Códigos IR (Exemplos) ---
-CODIGO_CIMA = "58"
-CODIGO_BAIXO = "59"
-CODIGO_ESQUERDA = "5A"
-CODIGO_DIREITA = "5B"
-CODIGO_CONFIRM = "5C" # Botão confirmar
-CODIGO_SAIR = "A"   # Botão de voltar
+CODIGO_CIMA = "16"
+CODIGO_BAIXO = "1A"
+CODIGO_ESQUERDA = "51"
+CODIGO_DIREITA = "50"
+CODIGO_CONFIRM = "13" # Botão confirmar
+CODIGO_SAIR = "A19"   # Botão de voltar
+#11
 
 # --- Configuração da Porta ---
-PORTA_SERIAL = 'COM4' 
+PORTA_SERIAL = 'COM5' 
 BAUD_RATE = 9600
 
 # --- Teclas Especiais (Constantes para facilitar a lógica) ---
@@ -33,7 +34,7 @@ MAIN_KEYBOARD_TV = [
 
 # --- Teclado com chars especias e numericos ---
 SPECIAL_KEYBOARD1_TV = [
-    ["1", "2", "3", "4", "5", "6", "7", "8", "8", "9", "0", KEY_BACKSPACE],
+    ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0", KEY_BACKSPACE],
     ["@", "#", "$", "%", "&", "-", "+", "(", ")", KEY_ENTER],
     [KEY_KEYBOARD_SPECIAL, "\\", "=", "*", "\"", "'", ":", ";", "!", "?", KEY_KEYBOARD_SPECIAL],
     [KEY_KEYBOARD_SWITCH, ",", "_", KEY_SPACE, KEY_SPACE, KEY_SPACE, KEY_SPACE, KEY_SPACE, "/", ".", KEY_DOTCOM]
@@ -42,7 +43,7 @@ SPECIAL_KEYBOARD1_TV = [
 # Tem outro teclado especial porém com teclas que não são muito comuns, a configuração dele é indentica ao "SPECIAL_KEYBOARD1_TV" apenas trocando os chars
 # Por isso decidimos por apenas replicar o outro teclado para podermos manter o tracking da posição e para casos decidirmos colocar o outro teclado no futuro
 SPECIAL_KEYBOARD2_TV = [
-    ["1", "2", "3", "4", "5", "6", "7", "8", "8", "9"],
+    ["1", "2", "3", "4", "5", "6", "7", "8", "9"],
     ["@", "#", "$", "%", "&", "-", "+", "(", ")", KEY_ENTER],
     [KEY_KEYBOARD_SPECIAL, "\\", "=", "*", "'", ":", ";", "!", "?", KEY_KEYBOARD_SPECIAL],
     [KEY_KEYBOARD_SWITCH, ",", "_", KEY_SPACE, KEY_SPACE, KEY_SPACE, KEY_SPACE, KEY_SPACE, "/", ".", KEY_DOTCOM]
@@ -88,9 +89,10 @@ def move_cursor(position, direction_code):
                 
             else: 
                 col -= 1 # aumenta uma linha, mas, partindo da coluna i, vai para a coluna i-1 da linha de baixo
-
-        # em todas as situações, a linha aumenta em 1, então deixamos o comando abaixo fora das condicionais anteriores
-        row += 1
+                row += 1
+        else:
+            row += 1
+            # em todas as situações, a linha aumenta em 1, então deixamos o comando abaixo fora das condicionais anteriores
         
     elif direction_code == CODIGO_ESQUERDA:
 
@@ -98,6 +100,8 @@ def move_cursor(position, direction_code):
         if KEYBOARD_TV[row][col] == KEY_SPACE:
             while KEYBOARD_TV[row][col] == KEY_SPACE:
                 col -= 1
+        elif KEYBOARD_TV[row][col] == "q" or KEYBOARD_TV[row][col] == 1:
+            col = 0
 
         else:
             col -= 1
@@ -106,6 +110,8 @@ def move_cursor(position, direction_code):
         if KEYBOARD_TV[row][col] == KEY_SPACE:
             while KEYBOARD_TV[row][col] == KEY_SPACE:
                 col += 1
+        elif KEYBOARD_TV[row][col] == KEY_DOTCOM:
+            col = len(KEYBOARD_TV[row])-1
 
         else:
             col += 1
@@ -145,6 +151,8 @@ def move_cursor(position, direction_code):
 
 def main():
     global current_position, current_char, password
+    global KEYBOARD_TV, MAIN_KEYBOARD_TV, SPECIAL_KEYBOARD1_TV, SPECIAL_KEYBOARD2_TV
+    global KEY_SPACE, KEY_BACKSPACE, KEY_CAPSLOCK, KEY_DOTCOM, KEY_ENTER, KEY_KEYBOARD_SPECIAL, KEY_KEYBOARD_SWITCH
     flag_caps = False
     
     print(f"Iniciando serIR (Python)... Conectando em {PORTA_SERIAL}")
@@ -208,7 +216,7 @@ def main():
                     else:
                         KEYBOARD_TV = MAIN_KEYBOARD_TV
                     # Volta para a posição inicial
-                    current_position[0, 0]
+                    current_position = [0 ,0]
                     current_char = KEYBOARD_TV[0][0]
 
                 # --- Logica para troca entre os teclados especiais ---
@@ -218,7 +226,7 @@ def main():
                     else:
                         KEYBOARD_TV = SPECIAL_KEYBOARD1_TV
                     # Volta para a posição inicial
-                    current_position[0, 0]
+                    current_position = [0, 0]
                     current_char = KEYBOARD_TV[0][0]
 
 

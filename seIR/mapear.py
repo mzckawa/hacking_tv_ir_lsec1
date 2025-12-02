@@ -1,7 +1,7 @@
 import serial
 
 #Configuração da porta
-PORTA_SERIAL = 'COM3'  
+PORTA_SERIAL = 'COM5'  
 BAUD_RATE = 9600    
 
 
