@@ -100,7 +100,7 @@ def move_cursor(position, direction_code):
         if KEYBOARD_TV[row][col] == KEY_SPACE:
             while KEYBOARD_TV[row][col] == KEY_SPACE:
                 col -= 1
-        elif KEYBOARD_TV[row][col] == "q" or KEYBOARD_TV[row][col] == 1:
+        elif KEYBOARD_TV[row][col] == "q" or KEYBOARD_TV[row][col] == "1":
             col = 0
 
         else:
@@ -116,6 +116,11 @@ def move_cursor(position, direction_code):
         else:
             col += 1
         
+    # --- Tratamento de Limites de Linhas (CIMA/BAIXO) ---
+    if row < 0: 
+        row = 0
+    elif row >= max_rows: 
+        row = max_rows - 1
 
     # --- Tratamento de Limites de Colunas (ESQUERDA/DIREITA) ---
     # Importante: O tamanho da coluna depende da linha atual!
@@ -131,11 +136,6 @@ def move_cursor(position, direction_code):
         col = 0 # Vai para o início da linha
         row +=1 
 
-    # --- Tratamento de Limites de Linhas (CIMA/BAIXO) ---
-    if row < 0: 
-        row = 0
-    elif row >= max_rows: 
-        row = max_rows - 1
         
     # --- Correção de Coluna ao mudar de linha ---
     # Se você estava na coluna N da linha de letras e desceu 
